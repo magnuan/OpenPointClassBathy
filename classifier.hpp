@@ -43,20 +43,44 @@ void getTrainingData(const std::vector<std::string> &filenames,
 
     for (size_t i = 0; i < filenames.size(); i++) {
         std::cout << "Processing " << filenames[i] << std::endl;
+        /* Read in point set, either from .PLY with built in simplistic parser, or from PDAL-supported format via libPDAL */  
         auto pointSet = readPointSet(filenames[i]);
         if (!pointSet->hasLabels()) {
             std::cout << filenames[i] << " has no labels, skipping..." << std::endl;
             continue;
         }
 
+        /* If base resolution (scale) is specified, use this
+        *  if not, calculate it from data
+        *      Pick 10k random points
+        *      From these, pick the most frequent RMS 4 neighbour distance as a starting point
+        *      Minimum 1 cm
+        */
         if (*startResolution == -1.0) {
             *startResolution = pointSet->spacing(); // meters
             std::cout << "Starting resolution: " << *startResolution << std::endl;
         }
 
+        //Generate scales, Representation of the point cloud at different zoom-levels
         auto scales = computeScales(numScales, pointSet, *startResolution, radius);
+        /* For each scale, Set up a set of features 
+        *  That is: 
+        *       Statistical parameters towards neighbours 
+        *       Colors, 
+        *       etc 
+        *   that is the properties of a point, that will be used as a basis for classification
+        *   TODO for bathy data
+        *     To these features we want to add
+        *       - measured range
+        *       - corrected intensity
+        *       - Angle of incidence for measurement 
+        *       - etc
+        *    TODO
+        *     We also want to remove annything based on color, as that is not relevant for bathy data
+        */
         auto features = getFeatures(scales);
         std::cout << "Features: " << features.size() << std::endl;
+        std::cout << "Labels: " << labels.size() << std::endl;
 
         if (i == 0) init(features.size(), labels.size());
 

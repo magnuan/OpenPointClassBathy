@@ -27,10 +27,12 @@ double PointSet::spacing(int kNeighbors) {
     std::vector<size_t> indices(count);
     std::vector<float> sqr_dists(count);
 
+    //For up to 10k random points in dataset, 
     for (size_t i = 0; i < SAMPLES; ++i) {
         const size_t idx = randomDis(gen);
+        // Find count nearest neighbours, and their squared distance
         index->knnSearch(points[idx].data(), count, indices.data(), sqr_dists.data());
-
+        //Calcualte RMS distance to the count nearest neighbours
         float sum = 0.0;
         for (size_t j = 1; j < kNeighbors; ++j) {
             sum += std::sqrt(sqr_dists[j]);
@@ -38,7 +40,14 @@ double PointSet::spacing(int kNeighbors) {
         sum /= static_cast<float>(kNeighbors);
 
         auto k = static_cast<size_t>(std::ceil(sum * 100));
-
+        
+        /*Add 100 x distance to RMS distance "heatmap" 
+        * so:
+        *  <= 1cm is index 1
+        *  1-2cm  is index 2
+        *  2-3cm is index 3
+        * etc
+        */
         if (dist_map.find(k) == dist_map.end()) {
             dist_map[k] = 1;
         }
@@ -46,7 +55,8 @@ double PointSet::spacing(int kNeighbors) {
             dist_map[k] += 1;
         }
     }
-
+    
+    // Find most frequent value in RMS distance heatmap
     size_t max_val = std::numeric_limits<size_t>::min();
     size_t d = 0;
     for (const auto it : dist_map) {
@@ -55,7 +65,7 @@ double PointSet::spacing(int kNeighbors) {
             max_val = it.second;
         }
     }
-
+    //Scale down to real value again and return
     m_spacing = std::max(0.01, static_cast<double>(d) / 100.0);
     return m_spacing;
 }
