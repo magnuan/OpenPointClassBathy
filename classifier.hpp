@@ -41,15 +41,19 @@ void getTrainingData(const std::vector<std::string> &filenames,
         }
     }
 
-    for (size_t i = 0; i < filenames.size(); i++) {
-        std::cout << "Processing " << filenames[i] << std::endl;
+    for (size_t file_ix = 0; file_ix < filenames.size(); file_ix++) {
+        std::cout << "Processing " << filenames[file_ix] << std::endl;
         /* Read in point set, either from .PLY with built in simplistic parser, or from PDAL-supported format via libPDAL */  
-        auto pointSet = readPointSet(filenames[i]);
+        auto pointSet = readPointSet(filenames[file_ix]);
         if (!pointSet->hasLabels()) {
-            std::cout << filenames[i] << " has no labels, skipping..." << std::endl;
+            std::cout << filenames[file_ix] << " has no labels, skipping..." << std::endl;
             continue;
         }
 
+        for (size_t i = 0; i < pointSet->count(); i++) {
+            //int g = pointSet->labels[i];
+            //std::cout << std::to_string(pointSet->labels[i]) <<",";
+        }
         /* If base resolution (scale) is specified, use this
         *  if not, calculate it from data
         *      Pick 10k random points
@@ -82,7 +86,7 @@ void getTrainingData(const std::vector<std::string> &filenames,
         std::cout << "Features: " << features.size() << std::endl;
         std::cout << "Labels: " << labels.size() << std::endl;
 
-        if (i == 0) init(features.size(), labels.size());
+        if (file_ix == 0) init(features.size(), labels.size());
 
         std::vector<std::size_t> count(labels.size(), 0);
         std::vector<bool> sampled(pointSet->count(), false);
@@ -90,6 +94,7 @@ void getTrainingData(const std::vector<std::string> &filenames,
 
         for (size_t i = 0; i < pointSet->count(); i++) {
             int g = pointSet->labels[i];
+            //std::cout << std::to_string(g) <<",";
             if (g != LABEL_UNASSIGNED) {
                 if (trainSubset && !trainClass[g]) continue;
 

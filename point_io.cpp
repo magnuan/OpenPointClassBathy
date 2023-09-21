@@ -455,6 +455,12 @@ bool hasHeader(const std::string &line, const std::string &prop) {
 }
 
 void savePointSet(PointSet &pSet, const std::string &filename) {
+    
+    std::cout<< "savePointSet" << std::endl;
+    for (size_t idx = 0; idx < pSet.count(); idx++) {
+        int label = pSet.labels[idx];
+    }
+
     const fs::path p(filename);
     if (p.extension().string() == ".ply") fastPlySavePointSet(pSet, filename);
     else pdalSavePointSet(pSet, filename);
@@ -472,15 +478,18 @@ void pdalSavePointSet(PointSet &pSet, const std::string &filename) {
     if (pSet.pointView == nullptr) throw std::runtime_error("pointView is null (should not have happened)");
     const pdal::PointViewPtr pView = pSet.pointView;
 
-    for (pdal::PointId i = 0; i < pSet.count(); i++) {
+    for (pdal::PointId idx = 0; idx < pSet.count(); idx++) {
         if (pSet.hasColors()) {
-            pView->setField(pdal::Dimension::Id::Red, i, pSet.colors[i][0]);
-            pView->setField(pdal::Dimension::Id::Green, i, pSet.colors[i][1]);
-            pView->setField(pdal::Dimension::Id::Blue, i, pSet.colors[i][2]);
+            pView->setField(pdal::Dimension::Id::Red, idx, pSet.colors[idx][0]);
+            pView->setField(pdal::Dimension::Id::Green, idx, pSet.colors[idx][1]);
+            pView->setField(pdal::Dimension::Id::Blue, idx, pSet.colors[idx][2]);
         }
+        
+        int label = pSet.labels[idx];
+        //std::cout << "PDAL point  " << idx << " label is " << label << std::endl;
 
         if (pSet.hasLabels()) {
-            pView->setField(pdal::Dimension::Id::Classification, i, pSet.labels[i]);
+            pView->setField(pdal::Dimension::Id::Classification, idx, label);
         }
     }
 
@@ -501,7 +510,7 @@ void pdalSavePointSet(PointSet &pSet, const std::string &filename) {
     s->prepare(table);
     s->execute(table);
 
-    std::cout << "Wrote " << filename << std::endl;
+    std::cout << "PDAL wrote " << filename << std::endl;
     #else
     fs::path p(filename);
     throw std::runtime_error("Unsupported file extension " + p.extension().string() + ", build program with PDAL support for additional file types support.");
